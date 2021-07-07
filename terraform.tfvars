@@ -1,0 +1,5 @@
+ami                  = "ami-0a8e758f5e873d1c1"
+instance_type        = "c4.2xlarge"
+username             = "stefan"
+private_key_location = "/Users/stefan/.ssh/id_rsa"
+public_key_location  = "/Users/stefan/.ssh/id_rsa.pub"

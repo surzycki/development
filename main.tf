@@ -1,7 +1,6 @@
 provider "aws" {
   profile = "default"
-  #region     = "us-east-1"
-  region = "eu-west-1"
+  region  = "eu-west-1"
 }
 
 
@@ -63,10 +62,9 @@ resource "aws_security_group" "development" {
 
 
 resource "aws_spot_instance_request" "development" {
-  ami = "ami-0a8e758f5e873d1c1"
-  #ami                 = "ami-089cc16f7f08c4457"
+  ami                  = var.ami
   spot_price           = "0.40"
-  instance_type        = "c4.2xlarge"
+  instance_type        = var.instance_type
   key_name             = "user-key"
   wait_for_fulfillment = true
 
@@ -87,12 +85,12 @@ resource "aws_spot_instance_request" "development" {
 resource "aws_ec2_tag" "spot-instance-tag" {
   resource_id = aws_spot_instance_request.development.spot_instance_id
   key         = "Name"
-  value       = "dev.comptoirdubitcoin.fr"
+  value       = "${var.username}.comptoirdubitcoin.fr"
 }
 
 resource "aws_route53_record" "dev" {
   zone_id         = "Z1MGNXOT9FXTV1"
-  name            = "dev.comptoirdubitcoin.fr"
+  name            = "${var.username}.comptoirdubitcoin.fr"
   type            = "CNAME"
   ttl             = "60"
   allow_overwrite = true
@@ -101,7 +99,7 @@ resource "aws_route53_record" "dev" {
 
 resource "aws_key_pair" "user" {
   key_name   = "user-key"
-  public_key = file("/Users/stefan/.ssh/id_rsa.pub")
+  public_key = file(var.public_key_location)
 }
 
 
@@ -113,22 +111,23 @@ resource "null_resource" "provision-machine" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("/Users/stefan/.ssh/id_rsa")
+    private_key = file(var.private_key_location)
     host        = aws_spot_instance_request.development.public_ip
     agent       = true
   }
 
   provisioner "file" {
-    source      = "/Users/stefan/.ssh/id_rsa"
+    source      = var.private_key_location
     destination = "/home/ubuntu/id_rsa"
   }
 
 
   provisioner "file" {
-    source      = "/Users/stefan/.ssh/id_rsa.pub"
+    source      = var.public_key_location
     destination = "/home/ubuntu/id_rsa.pub"
   }
 
+  # setup docker and user
   provisioner "remote-exec" {
     inline = [
       "sudo hostname development",
@@ -136,16 +135,16 @@ resource "null_resource" "provision-machine" {
       "sudo apt-get update",
       "sudo apt-get -y install docker.io git emacs27",
       "sudo usermod -aG docker $USER",
-      "sudo useradd -G docker,adm,sudo -m -s /bin/bash stefan",
-      "sudo mkdir /home/stefan/.ssh",
-      "sudo cp /home/ubuntu/id_rsa.pub /home/stefan/.ssh/authorized_keys",
-      "sudo mv /home/ubuntu/id_rsa /home/stefan/.ssh",
-      "sudo mv /home/ubuntu/id_rsa.pub /home/stefan/.ssh",
-      "sudo chmod 0600 /home/stefan/.ssh/id_rsa",
-      "sudo chown -R stefan:stefan /home/stefan",
-      "echo 'stefan ALL=(ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo",
       "sudo curl -L \"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose",
       "sudo chmod +x /usr/local/bin/docker-compose",
+      "sudo useradd -G docker,adm,sudo -m -s /bin/bash ${var.username}",
+      "sudo mkdir /home/${var.username}/.ssh",
+      "sudo cp /home/ubuntu/id_rsa.pub /home/${var.username}/.ssh/authorized_keys",
+      "sudo mv /home/ubuntu/id_rsa /home/${var.username}/.ssh",
+      "sudo mv /home/ubuntu/id_rsa.pub /home/${var.username}/.ssh",
+      "sudo chmod 0600 /home/${var.username}/.ssh/id_rsa",
+      "sudo chown -R ${var.username}:${var.username} /home/${var.username}",
+      "echo '${var.username} ALL=(ALL) NOPASSWD: ALL' | sudo EDITOR='tee -a' visudo",
     ]
   }
 }
@@ -157,36 +156,44 @@ resource "null_resource" "provision-user" {
 
   connection {
     type        = "ssh"
-    user        = "stefan"
-    private_key = file("/Users/stefan/.ssh/id_rsa")
+    user        = var.username
+    private_key = file(var.private_key_location)
     host        = aws_spot_instance_request.development.public_ip
     agent       = true
   }
 
+  # install local doom emacs configurations
   provisioner "file" {
     source      = "/Users/stefan/.doom.d"
-    destination = "/home/stefan"
+    destination = "/home/${var.username}"
+    on_failure  = continue
   }
 
+  # install local gitconfig configurations
   provisioner "file" {
     source      = "/Users/stefan/.gitconfig"
-    destination = "/home/stefan/.gitconfig"
+    destination = "/home/${var.username}/.gitconfig"
+    on_failure  = continue
   }
 
+  # install local tmux configurations
   provisioner "file" {
     source      = "/Users/stefan/.tmux.conf"
-    destination = "/home/stefan/.tmux.conf"
+    destination = "/home/${var.username}/.tmux.conf"
+    on_failure  = continue
   }
 
+  # install .profile (from this repo)
   provisioner "file" {
-    source      = "/Users/stefan/Code/terraform/development/.profile"
-    destination = "/home/stefan/.profile"
+    source      = ".profile"
+    destination = "/home/${var.username}/.profile"
+    on_failure  = continue
   }
 
+  # install doom emacs
   provisioner "remote-exec" {
     inline = [
       "git clone --depth 1 https://github.com/hlissner/doom-emacs ~/.emacs.d",
-      "sudo mkdir /home/stefan/.ssh && sudo chown -R stefan:stefan /home/stefan",
       "yes | ~/.emacs.d/bin/doom install"
     ]
   }
