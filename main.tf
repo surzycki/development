@@ -1,5 +1,5 @@
 provider "aws" {
-  profile = "default"
+  profile = "devops-terraform-staging"
   region  = "eu-west-1"
 }
 
@@ -133,7 +133,7 @@ resource "null_resource" "provision-machine" {
       "sudo hostname development",
       "sudo add-apt-repository ppa:kelleyk/emacs -y",
       "sudo apt-get update",
-      "sudo apt-get -y install docker.io git emacs27",
+      "sudo apt-get -y install docker.io git emacs27 ripgrep",
       "sudo usermod -aG docker $USER",
       "sudo curl -L \"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose",
       "sudo chmod +x /usr/local/bin/docker-compose",
@@ -194,7 +194,8 @@ resource "null_resource" "provision-user" {
   provisioner "remote-exec" {
     inline = [
       "git clone --depth 1 https://github.com/hlissner/doom-emacs ~/.emacs.d",
-      "yes | ~/.emacs.d/bin/doom install"
+      "yes | ~/.emacs.d/bin/doom install",
+      "mkdir Projects"
     ]
   }
 }
