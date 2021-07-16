@@ -198,4 +198,11 @@ resource "null_resource" "provision-user" {
       "mkdir Projects"
     ]
   }
+
+  # custom script
+  provisioner "remote-exec" {
+    inline = [
+      "./local_custom.sh"
+    ]
+  }
 }
