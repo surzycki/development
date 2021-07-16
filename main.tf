@@ -202,7 +202,7 @@ resource "null_resource" "provision-user" {
   # custom script
   provisioner "remote-exec" {
     inline = [
-      "./local_custom.sh"
+      "sh local_custom.sh"
     ]
   }
 }
