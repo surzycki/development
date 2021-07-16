@@ -204,5 +204,6 @@ resource "null_resource" "provision-user" {
     inline = [
       "sh local_custom.sh"
     ]
+    on_failure = continue
   }
 }
