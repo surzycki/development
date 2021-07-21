@@ -61,13 +61,10 @@ resource "aws_security_group" "development" {
 
 
 
-#resource "aws_spot_instance_request" "development" {
 resource "aws_instance" "development" {
-  ami = var.ami
-  #  spot_price           = "0.40"
+  ami           = var.ami
   instance_type = var.instance_type
   key_name      = "user-key"
-  #  wait_for_fulfillment = true
 
   # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = [aws_security_group.development.id]
@@ -84,7 +81,7 @@ resource "aws_instance" "development" {
 
 
 resource "aws_ec2_tag" "spot-instance-tag" {
-  resource_id = aws_spot_instance_request.development.spot_instance_id
+  resource_id = aws_instance.development.id
   key         = "Name"
   value       = "${var.username}.comptoirdubitcoin.fr"
 }
@@ -95,7 +92,7 @@ resource "aws_route53_record" "dev" {
   type            = "CNAME"
   ttl             = "60"
   allow_overwrite = true
-  records         = [aws_spot_instance_request.development.public_dns]
+  records         = [aws_instance.development.public_dns]
 }
 
 resource "aws_key_pair" "user" {
@@ -105,15 +102,15 @@ resource "aws_key_pair" "user" {
 
 
 resource "null_resource" "provision-machine" {
-  # triggers = {
-  #   always_run = "${timestamp()}"
-  # }
+  triggers = {
+    always_run = "${timestamp()}"
+  }
 
   connection {
     type        = "ssh"
     user        = "ubuntu"
     private_key = file(var.private_key_location)
-    host        = aws_spot_instance_request.development.public_ip
+    host        = aws_instance.development.public_ip
     agent       = true
   }
 
@@ -159,7 +156,7 @@ resource "null_resource" "provision-user" {
     type        = "ssh"
     user        = var.username
     private_key = file(var.private_key_location)
-    host        = aws_spot_instance_request.development.public_ip
+    host        = aws_instance.development.public_ip
     agent       = true
   }
 
