@@ -61,12 +61,13 @@ resource "aws_security_group" "development" {
 
 
 
-resource "aws_spot_instance_request" "development" {
-  ami                  = var.ami
-  spot_price           = "0.40"
-  instance_type        = var.instance_type
-  key_name             = "user-key"
-  wait_for_fulfillment = true
+#resource "aws_spot_instance_request" "development" {
+resource "aws_instance" "development" {
+  ami = var.ami
+  #  spot_price           = "0.40"
+  instance_type = var.instance_type
+  key_name      = "user-key"
+  #  wait_for_fulfillment = true
 
   # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = [aws_security_group.development.id]
