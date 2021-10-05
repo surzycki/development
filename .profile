@@ -18,5 +18,7 @@ fi)'
 
 alias dc="docker-compose"
 
+alias k="kubectl"
+
 # Editor
 export EDITOR=vim

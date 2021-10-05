@@ -1,5 +1,5 @@
 provider "aws" {
-  profile = "devops-terraform-staging"
+  profile = "root"
   region  = "eu-west-1"
 }
 
@@ -193,12 +193,31 @@ resource "null_resource" "provision-user" {
     inline = [
       "git clone --depth 1 https://github.com/hlissner/doom-emacs ~/.emacs.d",
       "yes | ~/.emacs.d/bin/doom install",
-      "mkdir Projects"
+      "mkdir -p Projects"
+    ]
+  }
+
+  # install kubectl and helm
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt-get update",
+      "sudo apt-get install -y apt-transport-https ca-certificates curl",
+      "sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg",
+      "echo 'deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee /etc/apt/sources.list.d/kubernetes.list",
+      "sudo apt-get update",
+      "sudo apt-get install -y kubectl",
+      "kubectl version --client",
+      "curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -",
+      "sudo apt-get install apt-transport-https --yes",
+      "echo 'deb https://baltocdn.com/helm/stable/debian/ all main' | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list",
+      "sudo apt-get update",
+      "sudo apt-get install helm",
+      "mkdir -p .kube"
     ]
   }
 
   # custom script
-  provisioner "remote-exec" {
+  provisioner "local-exec" {
     inline = [
       "sh local_custom.sh"
     ]
