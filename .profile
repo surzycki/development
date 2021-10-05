@@ -22,3 +22,4 @@ alias k="kubectl"
 
 # Editor
 export EDITOR=vim
+export KUBECONFIG=$KUBECONFIG:$HOME/.kube/config.eks
