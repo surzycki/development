@@ -212,15 +212,14 @@ resource "null_resource" "provision-user" {
       "echo 'deb https://baltocdn.com/helm/stable/debian/ all main' | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list",
       "sudo apt-get update",
       "sudo apt-get install helm",
-      "mkdir -p .kube"
+      "mkdir -p .kube",
+      "mkdir -p .aws"
     ]
   }
 
   # custom script
   provisioner "local-exec" {
-    inline = [
-      "sh local_custom.sh"
-    ]
+    command    = "sh local_custom.sh"
     on_failure = continue
   }
 }
