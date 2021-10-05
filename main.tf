@@ -217,6 +217,17 @@ resource "null_resource" "provision-user" {
     ]
   }
 
+  # install aws cli
+  provisioner "remote-exec" {
+    inline = [
+      "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
+      "unzip -f awscliv2.zip",
+      "sudo ./aws/install",
+      "rm awscliv2.zip",
+      "rm -rf aws"
+    ]
+  }
+
   # custom script
   provisioner "local-exec" {
     command    = "sh local_custom.sh"
