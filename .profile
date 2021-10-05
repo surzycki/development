@@ -17,9 +17,8 @@ else \
 fi)'
 
 alias dc="docker-compose"
-
 alias k="kubectl"
 
 # Editor
 export EDITOR=vim
-export KUBECONFIG=$KUBECONFIG:$HOME/.kube/config.eks
+export KUBECONFIG=$KUBECONFIG:$HOME/.kube/config
